@@ -1,10 +1,8 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
 
-import org.junit.Test;
-
-import javax.script.ScriptEngineManager;
-
-import jdk.nashorn.api.scripting.NashornScriptEngine;
+package graal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -12,10 +10,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import org.graalvm.polyglot.Context;
+import org.junit.Test;
+
 public class ResourceFolderTest {
   private ResourceFolder root =
-      ResourceFolder.create(
-          getClass().getClassLoader(), "com/coveo/nashorn_modules/test1", "UTF-8");
+      ResourceFolder.create(getClass().getClassLoader(), "graal/test1", "UTF-8");
 
   @Test
   public void rootFolderHasTheExpectedProperties() {
@@ -56,9 +56,8 @@ public class ResourceFolderTest {
 
   @Test
   public void resourceFolderWorksWhenUsedForReal() throws Throwable {
-    NashornScriptEngine engine =
-        (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
-    Require.enable(engine, root);
-    assertEquals("spam", engine.eval("require('./foo').bar.spam.spam"));
+    Context context = Context.create();
+    Require.enable(context, root);
+    assertEquals("spam", context.eval("js", "require('./foo').bar.spam.spam").asString());
   }
 }

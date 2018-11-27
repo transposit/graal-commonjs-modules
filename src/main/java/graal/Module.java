@@ -1,81 +1,73 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
+
+package graal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
+import org.graalvm.polyglot.Value;
 
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
-
-import jdk.nashorn.api.scripting.NashornScriptEngine;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.internal.runtime.ECMAException;
-
-public class Module extends SimpleBindings implements RequireFunction {
-  private NashornScriptEngine engine;
-  private ScriptObjectMirror objectConstructor;
-  private ScriptObjectMirror jsonConstructor;
-  private ScriptObjectMirror errorConstructor;
+public class Module implements RequireFunction {
+  private Context context;
+  private Value jsonConstructor;
 
   private Folder folder;
   private ModuleCache cache;
 
-  private Module main;
-  private Bindings module;
-  private List<Bindings> children = new ArrayList<>();
-  private Object exports;
-  private static ThreadLocal<Map<String, Bindings>> refCache = new ThreadLocal<>();
+  private Module mainModule;
+  public Value main;
+  private Value module;
+  private List<Value> children = new ArrayList<>();
+  private Value exports;
+  private static ThreadLocal<Map<String, Value>> refCache = new ThreadLocal<>();
 
   public Module(
-      NashornScriptEngine engine,
+      Context context,
       Folder folder,
       ModuleCache cache,
       String filename,
-      Bindings module,
-      Bindings exports,
+      Value module,
+      Value exports,
       Module parent,
-      Module main)
-      throws ScriptException {
+      Module root)
+      throws PolyglotException {
 
-    this.engine = engine;
+    this.context = context;
 
     if (parent != null) {
-      this.objectConstructor = parent.objectConstructor;
       this.jsonConstructor = parent.jsonConstructor;
-      this.errorConstructor = parent.errorConstructor;
     } else {
-      this.objectConstructor = (ScriptObjectMirror) engine.eval("Object");
-      this.jsonConstructor = (ScriptObjectMirror) engine.eval("JSON");
-      this.errorConstructor = (ScriptObjectMirror) engine.eval("Error");
+      this.jsonConstructor = context.eval("js", "JSON");
     }
 
     this.folder = folder;
     this.cache = cache;
-    this.main = main != null ? main : this;
+    this.mainModule = root != null ? root : this;
     this.module = module;
     this.exports = exports;
 
-    put("main", this.main.module);
+    this.main = this.mainModule.module;
 
-    module.put("exports", exports);
-    module.put("children", children);
-    module.put("filename", filename);
-    module.put("id", filename);
-    module.put("loaded", false);
-    module.put("parent", parent != null ? parent.module : null);
+    module.putMember("exports", exports);
+    module.putMember("children", children);
+    module.putMember("filename", filename);
+    module.putMember("id", filename);
+    module.putMember("loaded", false);
+    module.putMember("parent", parent != null ? parent.module : null);
   }
 
   void setLoaded() {
-    module.put("loaded", true);
+    module.putMember("loaded", true);
   }
 
   @Override
-  public Object require(String module) throws ScriptException {
+  public Value require(String module) throws PolyglotException {
     if (module == null) {
       throwModuleNotFoundException("<null>");
     }
@@ -101,12 +93,12 @@ public class Module extends SimpleBindings implements RequireFunction {
     String requestedFullPath = null;
     if (resolvedFolder != null) {
       requestedFullPath = resolvedFolder.getPath() + filename;
-      Bindings cachedExports = refCache.get().get(requestedFullPath);
+      Value cachedExports = refCache.get().get(requestedFullPath);
       if (cachedExports != null) {
         return cachedExports;
       } else {
         // We must store a reference to currently loading module to avoid circular requires
-        refCache.get().put(requestedFullPath, createSafeBindings());
+        refCache.get().put(requestedFullPath, newObject());
       }
     }
 
@@ -140,7 +132,7 @@ public class Module extends SimpleBindings implements RequireFunction {
   }
 
   private Module searchForModuleInNodeModules(
-      Folder resolvedFolder, String[] folderParts, String filename) throws ScriptException {
+      Folder resolvedFolder, String[] folderParts, String filename) throws PolyglotException {
     Folder current = resolvedFolder;
     while (current != null) {
       Folder nodeModules = current.getFolder("node_modules");
@@ -160,7 +152,7 @@ public class Module extends SimpleBindings implements RequireFunction {
   }
 
   private Module attemptToLoadFromThisFolder(Folder resolvedFolder, String filename)
-      throws ScriptException {
+      throws PolyglotException {
 
     if (resolvedFolder == null) {
       return null;
@@ -191,7 +183,7 @@ public class Module extends SimpleBindings implements RequireFunction {
     return found;
   }
 
-  private Module loadModuleAsFile(Folder parent, String filename) throws ScriptException {
+  private Module loadModuleAsFile(Folder parent, String filename) throws PolyglotException {
 
     String[] filenamesToAttempt = getFilenamesToAttempt(filename);
     for (String tentativeFilename : filenamesToAttempt) {
@@ -206,7 +198,7 @@ public class Module extends SimpleBindings implements RequireFunction {
     return null;
   }
 
-  private Module loadModuleAsFolder(Folder parent, String name) throws ScriptException {
+  private Module loadModuleAsFolder(Folder parent, String name) throws PolyglotException {
     Folder fileAsFolder = parent.getFolder(name);
     if (fileAsFolder == null) {
       return null;
@@ -225,7 +217,7 @@ public class Module extends SimpleBindings implements RequireFunction {
     return found;
   }
 
-  private Module loadModuleThroughPackageJson(Folder parent) throws ScriptException {
+  private Module loadModuleThroughPackageJson(Folder parent) throws PolyglotException {
     String packageJson = parent.getFile("package.json");
     if (packageJson == null) {
       return null;
@@ -256,12 +248,12 @@ public class Module extends SimpleBindings implements RequireFunction {
     return module;
   }
 
-  private String getMainFileFromPackageJson(String packageJson) throws ScriptException {
-    Bindings parsed = parseJson(packageJson);
-    return (String) parsed.get("main");
+  private String getMainFileFromPackageJson(String packageJson) throws PolyglotException {
+    Value parsed = parseJson(packageJson);
+    return parsed.getMember("main").asString();
   }
 
-  private Module loadModuleThroughIndexJs(Folder parent) throws ScriptException {
+  private Module loadModuleThroughIndexJs(Folder parent) throws PolyglotException {
     String code = parent.getFile("index.js");
     if (code == null) {
       return null;
@@ -270,7 +262,7 @@ public class Module extends SimpleBindings implements RequireFunction {
     return compileModuleAndPutInCache(parent, parent.getPath() + "index.js", code);
   }
 
-  private Module loadModuleThroughIndexJson(Folder parent) throws ScriptException {
+  private Module loadModuleThroughIndexJson(Folder parent) throws PolyglotException {
     String code = parent.getFile("index.json");
     if (code == null) {
       return null;
@@ -280,7 +272,7 @@ public class Module extends SimpleBindings implements RequireFunction {
   }
 
   private Module compileModuleAndPutInCache(Folder parent, String fullPath, String code)
-      throws ScriptException {
+      throws PolyglotException {
 
     Module created;
     String lowercaseFullPath = fullPath.toLowerCase();
@@ -301,70 +293,58 @@ public class Module extends SimpleBindings implements RequireFunction {
   }
 
   private Module compileJavaScriptModule(Folder parent, String fullPath, String code)
-      throws ScriptException {
+      throws PolyglotException {
 
-    Bindings engineScope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-    Bindings module = createSafeBindings();
-    module.putAll(engineScope);
+    Value module = newObject();
 
     // If we have cached bindings, use them to rebind exports instead of creating new ones
-    Bindings exports = refCache.get().get(fullPath);
+    Value exports = refCache.get().get(fullPath);
     if (exports == null) {
-      exports = createSafeBindings();
+      exports = newObject();
     }
 
-    Module created = new Module(engine, parent, cache, fullPath, module, exports, this, this.main);
+    Module created =
+        new Module(context, parent, cache, fullPath, module, exports, this, this.mainModule);
 
     String[] split = Paths.splitPath(fullPath);
     String filename = split[split.length - 1];
     String dirname = fullPath.substring(0, Math.max(fullPath.length() - filename.length() - 1, 0));
 
-    String previousFilename = (String) engine.get(ScriptEngine.FILENAME);
-    // set filename before eval so file names/lines in
-    // exceptions are accurate
-    engine.put(ScriptEngine.FILENAME, fullPath);
-
-    try {
-      // This mimics how Node wraps module in a function. I used to pass a 2nd parameter
-      // to eval to override global context, but it caused problems Object.create.
-      //
-      // The \n at the end is to take care of files ending with a comment
-      ScriptObjectMirror function =
-          (ScriptObjectMirror)
-              engine.eval(
-                  "(function (exports, require, module, __filename, __dirname) {" + code + "\n})");
-      function.call(created, created.exports, created, created.module, filename, dirname);
-    } finally {
-      engine.put(ScriptEngine.FILENAME, previousFilename);
-    }
+    // This mimics how Node wraps module in a function. I used to pass a 2nd parameter
+    // to eval to override global context, but it caused problems Object.create.
+    //
+    // The \n at the end is to take care of files ending with a comment
+    Value function =
+        context.eval(
+            "js", "(function (exports, require, module, __filename, __dirname) {" + code + "\n})");
+    function.execute(created.exports, created, created.module, filename, dirname);
 
     // Scripts are free to replace the global exports symbol with their own, so we
     // reload it from the module object after compiling the code.
-    created.exports = created.module.get("exports");
+    created.exports = created.module.getMember("exports");
 
     created.setLoaded();
     return created;
   }
 
   private Module compileJsonModule(Folder parent, String fullPath, String code)
-      throws ScriptException {
-    Bindings module = createSafeBindings();
-    Bindings exports = createSafeBindings();
-    Module created = new Module(engine, parent, cache, fullPath, module, exports, this, this.main);
+      throws PolyglotException {
+    Value module = newObject();
+    Value exports = newObject();
+    Module created =
+        new Module(context, parent, cache, fullPath, module, exports, this, this.mainModule);
     created.exports = parseJson(code);
     created.setLoaded();
     return created;
   }
 
-  private ScriptObjectMirror parseJson(String json) throws ScriptException {
+  private Value parseJson(String json) throws PolyglotException {
     // Pretty lame way to parse JSON but hey...
-    return (ScriptObjectMirror) jsonConstructor.callMember("parse", json);
+    return jsonConstructor.getMember("parse").execute(json);
   }
 
-  private void throwModuleNotFoundException(String module) throws ScriptException {
-    Bindings error = (Bindings) errorConstructor.newObject("Module not found: " + module);
-    error.put("code", "MODULE_NOT_FOUND");
-    throw new ECMAException(error, null);
+  private void throwModuleNotFoundException(String module) throws PolyglotException {
+    context.eval("js", "throw new Error('Module not found: " + module + "')");
   }
 
   private Folder resolveFolder(Folder from, String[] folders) {
@@ -392,11 +372,8 @@ public class Module extends SimpleBindings implements RequireFunction {
     return current;
   }
 
-  private Bindings createSafeBindings() throws ScriptException {
-    // As explained in https://github.com/coveo/nashorn-commonjs-modules/pull/16/files a plain
-    // SimpleBindings has quite a few limitations in Nashorn compared to a ScriptObject, so
-    // whenever we need an instance of those (for `exports` etc.) we create a real JS object.
-    return (ScriptObjectMirror) objectConstructor.newObject();
+  private Value newObject() throws PolyglotException {
+    return context.eval("js", "({})");
   }
 
   private static boolean isPrefixedModuleName(String module) {

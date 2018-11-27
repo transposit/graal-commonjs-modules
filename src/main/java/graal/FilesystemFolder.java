@@ -1,11 +1,14 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
 
-import org.apache.commons.io.IOUtils;
+package graal;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import org.apache.commons.io.IOUtils;
 
 public class FilesystemFolder extends AbstractFolder {
   private File root;

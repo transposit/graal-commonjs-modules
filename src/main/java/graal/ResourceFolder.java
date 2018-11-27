@@ -1,9 +1,12 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
 
-import org.apache.commons.io.IOUtils;
+package graal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
 
 public class ResourceFolder extends AbstractFolder {
   private ClassLoader loader;

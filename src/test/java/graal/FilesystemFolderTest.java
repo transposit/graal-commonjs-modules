@@ -1,26 +1,27 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
 
-import org.junit.Test;
-
-import java.io.File;
-
-import javax.script.ScriptEngineManager;
-
-import jdk.nashorn.api.scripting.NashornScriptEngine;
+package graal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import org.graalvm.polyglot.Context;
+import org.junit.Test;
+
 public class FilesystemFolderTest {
-  private File file = new File("src/test/resources/com/coveo/nashorn_modules/test1");
+  private File file = new File("src/test/resources/graal/test1");
   private FilesystemFolder root = FilesystemFolder.create(file, "UTF-8");
 
   private File subfile = new File(file, "subdir");
   private File subsubfile = new File(subfile, "subsubdir");
 
-  private String rootPath = file.getAbsolutePath().substring(0, file.getAbsolutePath().indexOf(File.separator));
+  private String rootPath =
+      file.getAbsolutePath().substring(0, file.getAbsolutePath().indexOf(File.separator));
 
   @Test
   public void rootFolderHasTheExpectedProperties() {
@@ -63,9 +64,8 @@ public class FilesystemFolderTest {
 
   @Test
   public void filesystemFolderWorksWhenUsedForReal() throws Throwable {
-    NashornScriptEngine engine =
-        (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
-    Require.enable(engine, root);
-    assertEquals("spam", engine.eval("require('./foo').bar.spam.spam"));
+    Context context = Context.create();
+    Require.enable(context, root);
+    assertEquals("spam", context.eval("js", "require('./foo').bar.spam.spam").asString());
   }
 }

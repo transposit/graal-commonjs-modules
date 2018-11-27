@@ -1,4 +1,8 @@
-package com.coveo.nashorn_modules;
+/*
+ * Copyright 2018 Transposit Corporation. All Rights Reserved.
+ */
+
+package graal;
 
 import java.util.HashMap;
 import java.util.Map;
