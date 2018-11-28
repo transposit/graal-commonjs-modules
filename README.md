@@ -1,24 +1,23 @@
-[![Build Status](https://travis-ci.org/coveo/nashorn-commonjs-modules.svg?branch=master)](https://travis-ci.org/coveo/nashorn-commonjs-modules)
-[![license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/coveo/nashorn-commonjs-modules/blob/master/LICENSE)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.coveo/nashorn-commonjs-modules/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.coveo/nashorn-commonjs-modules)
+# CommonJS Modules Support for Graaljs
 
-# CommonJS Modules Support for Nashorn
-
-This library adds support for CommonJS modules (aka `require`) inside a Nashorn script engine. It is based on the specification for [NodeJS modules](https://nodejs.org/api/modules.html) and it supports loading modules from the `node_modules` folder just as Node does. Of course, it doesn't provide an implementation for Node's APIs, so any module that depends on those won't work.
+This library adds support for CommonJS modules (aka `require`) inside a Graaljs script engine. It is based on the specification for [NodeJS modules](https://nodejs.org/api/modules.html) and it supports loading modules from the `node_modules` folder just as Node does. Of course, it doesn't provide an implementation for Node's APIs, so any module that depends on those won't work.
 
 It is somehow similar to [jvm-npm](https://github.com/nodyn/jvm-npm) which I used before, but it is 100% implemented in Java and supports loading files through other means than the filesystem; you only need to implement a simple interface and you should be good to go. Also, having the implementation in Java allows using it with a JS interpreter on which access to Java packages has been disabled for sandboxing purposes.
 
 Out-of-the-box, the library supports loading modules from the filesystem and from Java resources.
 
-# Getting the library using Maven
+# Using the library with maven
 
-Add this dependency to your `pom.xml` to reference the library:
+The jar isn't published publicly. Run `mvn package` to create the jar,
+then add this dependency to your `pom.xml` to reference the library:
 
 ```xml
 <dependency>
-  <groupId>com.coveo</groupId>
-  <artifactId>nashorn-commonjs-modules</artifactId>
-  <version>1.0.9</version>
+  <groupId>transposit</groupId>
+  <artifactId>graal-commonjs-modules</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <scope>system</scope>
+  <systemPath>${project.basedir}/src/main/resources/graal-commonjs-modules-1.0.0-SNAPSHOT.jar</systemPath>
 </dependency>
 ```
 
@@ -27,8 +26,8 @@ Add this dependency to your `pom.xml` to reference the library:
 Enabling `require` in an existing Nashorn interpreter can be done very easily:
 
 ```java
-NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
-Require.enable(engine, myRootFolder);
+Context context = Context.create();
+Require.enable(context, myRootFolder);
 ```
 
 This will expose a new global `require` function at the engine scope. Any code that is then run using this engine can make use of `require`.
@@ -43,7 +42,7 @@ Use the `FilesystemFolder.create` method to create an implementation of `Folder`
 
 ```java
 FilesystemFolder rootFolder = FilesystemFolder.create(new File("/path/to/my/folder"), "UTF-8");
-Require.enable(engine, rootFolder);
+Require.enable(context, rootFolder);
 ```
 
 You need to specify the encoding of the files. Most of the time UTF-8 will be a reasonable choice.
@@ -56,7 +55,7 @@ The resulting folder is rooted at the path you specified, and JavaScript code wo
 Use the `ResourceFolder.create` method to create an implementation of `Folder` backed by Java resources:
 
 ```java
-ResourceFolder rootFolder = ResourceFolder.create(getClass().getClassLoader(), "com/coveo/nashorn_modules/test1", "UTF-8");
+ResourceFolder rootFolder = ResourceFolder.create(getClass().getClassLoader(), "graal/nashorn_modules/test1", "UTF-8");
 Require.enable(engine, rootFolder);
 ```
 
