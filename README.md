@@ -8,16 +8,36 @@ Out-of-the-box, the library supports loading modules from the filesystem and fro
 
 # Using the library with maven
 
-The jar isn't published publicly. Run `mvn package` to create the jar,
-then add this dependency to your `pom.xml` to reference the library:
+The jar isn't published publicly. Run `mvn package` to create the jar, then install the jar as a local repo by running:
+
+```
+mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file \
+  -Dfile=~/.m2/repository/transposit/graal-commonjs-modules/1.0.0-SNAPSHOT/graal-commonjs-modules-1.0.0-SNAPSHOT.jar \
+  -DgroupId=transposit \
+  -DartifactId=graal-commonjs-modules \
+  -Dversion=1.0.0-SNAPSHOT \
+  -Dpackaging=jar \
+  -DlocalRepositoryPath=src/main/resources \
+```
+
+then add this repository definition to your `pom.xml`:
+
+```xml
+<repositories>
+  <repository>
+    <id>graal-commonjs-modules</id>
+    <url>file://${basedir}/src/main/resources</url>
+  </repository>
+</repositories>
+```
+
+and reference the dependency as usual:
 
 ```xml
 <dependency>
   <groupId>transposit</groupId>
   <artifactId>graal-commonjs-modules</artifactId>
   <version>1.0.0-SNAPSHOT</version>
-  <scope>system</scope>
-  <systemPath>${project.basedir}/src/main/resources/graal-commonjs-modules-1.0.0-SNAPSHOT.jar</systemPath>
 </dependency>
 ```
 
