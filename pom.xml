@@ -23,19 +23,19 @@
     <dependency>
       <groupId>org.graalvm.sdk</groupId>
       <artifactId>graal-sdk</artifactId>
-      <version>1.0.0-rc9</version>
+      <version>19.1.1</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.oracle.truffle/truffle-api -->
     <dependency>
       <groupId>org.graalvm.truffle</groupId>
       <artifactId>truffle-api</artifactId>
-      <version>1.0.0-rc9</version>
+      <version>19.1.1</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.graalvm.js/js -->
     <dependency>
       <groupId>org.graalvm.js</groupId>
       <artifactId>js</artifactId>
-      <version>1.0.0-rc9</version>
+      <version>19.1.1</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

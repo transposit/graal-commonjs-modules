@@ -10,8 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.proxy.ProxyArray;
 
 public class Module implements RequireFunction {
   private Context context;
@@ -21,7 +23,7 @@ public class Module implements RequireFunction {
   private ModuleCache cache;
 
   private Module mainModule;
-  public Value main;
+  @HostAccess.Export public Value main;
   private Value module;
   private List<Value> children = new ArrayList<>();
   private Value exports;
@@ -55,7 +57,7 @@ public class Module implements RequireFunction {
     this.main = this.mainModule.module;
 
     module.putMember("exports", exports);
-    module.putMember("children", children);
+    module.putMember("children", new WrappedList(children));
     module.putMember("filename", filename);
     module.putMember("id", filename);
     module.putMember("loaded", false);
@@ -67,6 +69,7 @@ public class Module implements RequireFunction {
   }
 
   @Override
+  @HostAccess.Export
   public Value require(String module) throws PolyglotException {
     if (module == null) {
       throwModuleNotFoundException("<null>");
@@ -250,7 +253,8 @@ public class Module implements RequireFunction {
 
   private String getMainFileFromPackageJson(String packageJson) throws PolyglotException {
     Value parsed = parseJson(packageJson);
-    return parsed.getMember("main").asString();
+    Value main = parsed.getMember("main");
+    return main == null ? null : main.asString();
   }
 
   private Module loadModuleThroughIndexJs(Folder parent) throws PolyglotException {
@@ -343,8 +347,8 @@ public class Module implements RequireFunction {
     return jsonConstructor.getMember("parse").execute(json);
   }
 
-  private void throwModuleNotFoundException(String module) throws PolyglotException {
-    context.eval("js", "throw new Error('Module not found: " + module + "')");
+  private void throwModuleNotFoundException(String module) throws GraalGuestException {
+    throw new GraalGuestException("Module not found: " + module);
   }
 
   private Folder resolveFolder(Folder from, String[] folders) {
@@ -382,5 +386,28 @@ public class Module implements RequireFunction {
 
   private static String[] getFilenamesToAttempt(String filename) {
     return new String[] {filename, filename + ".js", filename + ".json"};
+  }
+
+  static class WrappedList implements ProxyArray {
+    private final List<Value> list;
+
+    public WrappedList(List<Value> list) {
+      this.list = list;
+    }
+
+    @Override
+    public Object get(long index) {
+      return list.get(Math.toIntExact(index));
+    }
+
+    @Override
+    public void set(long index, Value value) {
+      list.set(Math.toIntExact(index), value);
+    }
+
+    @Override
+    public long getSize() {
+      return list.size();
+    }
   }
 }

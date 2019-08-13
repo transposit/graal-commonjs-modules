@@ -218,7 +218,7 @@ public class ModuleTest {
     assertEquals("nmfile1", require.require("./nmfile1").getMember("nmfile1").asString());
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itDoesNotUseModulesOutsideOfNodeModulesForNonPrefixedNames() throws Throwable {
     require.require("file1.js");
   }
@@ -260,27 +260,27 @@ public class ModuleTest {
     assertEquals("file1", require.require("./file1").getMember("file1").asString());
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itThrowsAnExceptionIfFileDoesNotExists() throws Throwable {
     require.require("./invalid");
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itThrowsAnExceptionIfSubFileDoesNotExists() throws Throwable {
     require.require("./sub1/invalid");
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itThrowsEnExceptionIfFolderDoesNotExists() throws Throwable {
     require.require("./invalid/file1.js");
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itThrowsEnExceptionIfSubFolderDoesNotExists() throws Throwable {
     require.require("./sub1/invalid/file1.js");
   }
 
-  @Test(expected = PolyglotException.class)
+  @Test(expected = GraalGuestException.class)
   public void itThrowsAnExceptionIfTryingToGoAboveTheTopLevelFolder() throws Throwable {
     // We need two ".." because otherwise the resolving attempts to load from "node_modules" and
     // ".." validly points to the root folder there.
