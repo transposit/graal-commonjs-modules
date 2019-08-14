@@ -15,7 +15,7 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file \
   -Dfile=~/.m2/repository/transposit/graal-commonjs-modules/1.0.1/graal-commonjs-modules-1.0.1.jar \
   -DgroupId=transposit \
   -DartifactId=graal-commonjs-modules \
-  -Dversion=1.0.0-SNAPSHOT \
+  -Dversion=1.0.1 \
   -Dpackaging=jar \
   -DlocalRepositoryPath=src/main/resources \
 ```
