@@ -20,7 +20,7 @@
   </licenses>
 
   <properties>
-    <graalvm.version>19.2.0</graalvm.version>
+    <graalvm.version>20.0.0</graalvm.version>
   </properties>
 
   <dependencies>
