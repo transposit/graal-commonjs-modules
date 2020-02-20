@@ -12,10 +12,10 @@ The jar isn't published publicly. Run `mvn package` to create the jar, then inst
 
 ```
 mvn org.apache.maven.plugins:maven-install-plugin:2.5.2:install-file \
-  -Dfile=~/.m2/repository/transposit/graal-commonjs-modules/1.0.2/graal-commonjs-modules-1.0.2.jar \
+  -Dfile=~/.m2/repository/transposit/graal-commonjs-modules/1.0.3/graal-commonjs-modules-1.0.3.jar \
   -DgroupId=transposit \
   -DartifactId=graal-commonjs-modules \
-  -Dversion=1.0.2 \
+  -Dversion=1.0.3 \
   -Dpackaging=jar \
   -DlocalRepositoryPath=src/main/resources \
 ```
@@ -37,7 +37,7 @@ and reference the dependency as usual:
 <dependency>
   <groupId>transposit</groupId>
   <artifactId>graal-commonjs-modules</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
 </dependency>
 ```
 
